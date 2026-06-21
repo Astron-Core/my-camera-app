@@ -1,0 +1,83 @@
+!DOCTYPE html
+html lang=th
+head
+    meta charset=UTF-8
+    meta name=viewport content=width=device-width, initial-scale=1.0
+    titleระบบถ่ายรูปส่งเข้า Google Apps Scripttitle
+    style
+        body { font-family sans-serif; text-align center; padding 20px; background-color #f5f5f5; }
+        video, canvas { width 100%; max-width 400px; border 2px solid #ccc; border-radius 8px; display block; margin 10px auto; }
+        button { padding 12px 24px; font-size 16px; color white; border none; border-radius 5px; cursor pointer; margin 5px; }
+        .btn-camera { background-color #008CBA; }
+        .btn-capture { background-color #4CAF50; }
+    style
+head
+body
+
+    h2ระบบเปิดกล้องถ่ายรูป (GitHub Pages)h2
+    
+    video id=video autoplay playsinlinevideo
+    canvas id=canvas style=displaynone;canvas
+    
+    button id=start-btn class=btn-camera1. เปิดกล้องbutton
+    button id=snap-btn class=btn-capture style=displaynone;2. ถ่ายรูปและส่งข้อมูลbutton
+
+    script
+         ⚠️ วาง URL ที่ได้จากขั้นตอนที่ 1 (Google Apps Script exec) แทนที่ตรงนี้ครับ
+        const WEB_APP_URL = httpsgoogle.com;
+
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const startBtn = document.getElementById('start-btn');
+        const snapBtn = document.getElementById('snap-btn');
+
+         1. เปิดกล้อง
+        startBtn.addEventListener('click', async () = {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video { facingMode user }, 
+                    audio false 
+                });
+                video.srcObject = stream;
+                startBtn.style.display = 'none';
+                snapBtn.style.display = 'inline-block';
+            } catch (err) {
+                alert('ไม่สามารถเปิดกล้องได้ ' + err.message + 'nกรุณาตรวจสอบสิทธิ์ของเบราว์เซอร์');
+            }
+        });
+
+         2. ถ่ายรูปและส่งไปหน้า Apps Script
+        snapBtn.addEventListener('click', () = {
+            const context = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+             วาดภาพจากวิดีโอลงใน Canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+             แปลงภาพเป็นรูปแบบ Base64 Text
+            const base64Image = canvas.toDataURL('imagejpeg');
+
+            snapBtn.innerText = กำลังส่งรูปภาพ...;
+            snapBtn.disabled = true;
+
+             ส่งข้อมูลไปยัง Google Apps Script ด้วยวิธี Fetch (POST)
+            fetch(WEB_APP_URL, {
+                method POST,
+                mode no-cors,  จำเป็นต้องใส่เพื่อเลี่ยงเรื่องสิทธิ์ CORS ข้ามโดเมน
+                headers { Content-Type applicationjson },
+                body JSON.stringify({ image base64Image })
+            })
+            .then(() = {
+                alert(ถ่ายรูปและส่งข้อมูลสำเร็จแล้ว! ตรวจสอบที่หน้า Apps Script ได้เลยครับ);
+                snapBtn.innerText = 2. ถ่ายรูปและส่งข้อมูล;
+                snapBtn.disabled = false;
+            })
+            .catch(err = {
+                alert(เกิดข้อผิดพลาดในการส่งข้อมูล  + err.message);
+                snapBtn.disabled = false;
+            });
+        });
+    script
+body
+html
